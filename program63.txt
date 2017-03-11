@@ -1,0 +1,199 @@
+// driver class
+
+
+import org.apache.hadoop.fs.Path; 
+import org.apache.hadoop.conf.*;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat; 
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat; 
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat; 
+import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+
+public class driver63 {
+	@SuppressWarnings("deprecation")
+	public static void main(String[] args) throws Exception {
+		Configuration conf = new Configuration();
+		
+		Job job = new Job(conf, "DemoTask1");
+		job.setJarByClass(driver63.class);
+
+		job.setMapOutputKeyClass(Text.class);
+		job.setMapOutputValueClass(IntWritable.class);
+
+		job.setOutputKeyClass(Text.class);
+		job.setOutputValueClass(IntWritable.class);
+		job.setMapperClass(map63a.class);
+		job.setReducerClass(reduce63.class);
+		job.setInputFormatClass(TextInputFormat.class);
+		job.setOutputFormatClass(TextOutputFormat.class);
+
+		FileInputFormat.addInputPath(job, new Path(args[0])); 
+		FileOutputFormat.setOutputPath(job,new Path(args[1]));
+		
+		
+		
+		job.waitForCompletion(true);// wait for the job to end
+		
+		
+		Job job1 = new Job(conf, "DemoTask1");
+		job1.setJarByClass(driver63.class);
+
+		job1.setMapOutputKeyClass(Text.class);
+		job1.setMapOutputValueClass(Text.class);
+
+		job1.setOutputKeyClass(Text.class);
+		job1.setOutputValueClass(IntWritable.class);
+		job1.setMapperClass(map63b.class);
+		//job1.setNumReduceTasks(0);
+		job1.setReducerClass(reduce63b.class);
+		job1.setInputFormatClass(TextInputFormat.class);
+		job1.setOutputFormatClass(TextOutputFormat.class);
+
+		FileInputFormat.addInputPath(job1, new Path(args[0])); 
+		FileOutputFormat.setOutputPath(job1,new Path(args[2]));
+		
+		
+		
+		job1.waitForCompletion(true);// wait for the job to end
+}
+}
+
+
+// map class for problem statement 1 
+
+import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.*;
+public class map63a extends Mapper<LongWritable , Text, Text , IntWritable>{
+	IntWritable no = new IntWritable(1);
+	SimpleDateFormat sd = new SimpleDateFormat("M/d/yy");
+	public void map(LongWritable key , Text value , Context context) throws IOException, InterruptedException
+	{
+		String[] l = value.toString().split(",");
+		try {
+			Date d1  =  sd.parse("1/11/99");
+			Date d2 = sd.parse("6/11/99");
+			String s = l[2];
+			Date d3 = sd.parse(s);
+			if(d3.after(d1)&& d3.before(d2))
+			{
+				context.write(new Text("No of people are"), no);
+			}
+		} catch (ParseException e) {
+			
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		}
+	
+	}
+
+
+//reduce class for problem statement 1
+
+import java.io.IOException;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.mapreduce.Reducer;
+public class reduce63 extends Reducer<Text,IntWritable,Text, IntWritable> {
+	public void reduce(Text key, Iterable<IntWritable> value , Context con) throws IOException, InterruptedException
+	{
+		int sum =0;
+		for(IntWritable v : value)
+		{
+			sum = sum + v.get();
+		}
+		con.write(key, new IntWritable(sum));
+	}
+
+}
+
+
+
+//map class for problem statement 2
+
+
+import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.*;
+public class map63b extends Mapper<LongWritable , Text, Text , Text>{
+	IntWritable no = new IntWritable(1);
+	SimpleDateFormat sd = new SimpleDateFormat("M/d/yy");
+	public void map(LongWritable key , Text value , Context context) throws IOException, InterruptedException
+	{
+		String[] l = value.toString().split(",");
+		String s1 = l[1];
+		String s2 = l[3];
+		context.write(new Text(s2), new Text(s1));
+		
+		}
+	
+	}
+
+
+
+// reduce class for problem statement 2
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.mapreduce.Reducer;
+public class reduce63b extends Reducer<Text,Text,Text, IntWritable> {
+	public void reduce(Text key, Iterable<Text> value , Context con) throws IOException, InterruptedException
+	{
+		HashSet<String> hs = new HashSet<>();
+		for(Text v : value)
+		{
+			
+		String s1 = v.toString();
+		hs.add(s1);
+		}
+		IntWritable no = new IntWritable(hs.size());
+ 		con.write(key,no);
+	}
+
+}
+
+
+//output
+
+chinmay@Chinmay-ThinkPad-E460:~/Desktop$ hadoop fs -cat /user/chins/output/63op8/part-r-00000
+No of people are	74
+chinmay@Chinmay-ThinkPad-E460:~/Desktop$ hadoop fs -cat /user/chins/output/63bop8/part-r-00000
+Academic	24
+Acting	12
+Advocacy	10
+Athletics	29
+Business	15
+Clergy	4
+Comedy	7
+Consultant	11
+Government	27
+Media	80
+Military	4
+Misc	16
+Musician	25
+NA	3
+Political Aide	13
+Politician	105
+Science	13
+media	1
+
